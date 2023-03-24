@@ -1,17 +1,13 @@
 package searchEngine;
 
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxOptions;
-import org.openqa.selenium.firefox.FirefoxProfile;
 import org.search.engine.BaseSearchPage;
 import org.search.engine.BaseSearchResults;
 import org.search.engine.bing.BingSearchHome;
 import org.search.engine.bing.BingSearchResults;
 import org.search.engine.google.GoogleSearchHome;
 import org.search.engine.google.GoogleSearchResults;
+import static browser.utils.DriverFactory.*;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
@@ -30,30 +26,32 @@ import java.util.*;
  *  e. The number of common links varies from execution to execution
  *      - For Firefox "chloroplast" has one common element
  *      - For Chrome "chloroplast" has two common elements
+ *---------------------------------------------------------------
  * 2. Implemented implicit wait 10 seconds because it is fast fix for small test. Would implement conditional wait usually.
  * Reasons:
- *  a. when switching from chrome to bing it too longer to load page so made 2 second wait
- *  b. when searching for "chloroplast" on Bing it too longer than 2 seconds to load so made 3 seconds wait
- *  c. when run on firefox it take a lot longer to load so made it exaggerated 10 seconds wait
- *  d. conditional wait is best, but it makes code ugly and prone to duplication of wait code or major change to classes
+ *  a. when switching from google to bing and from chrome to firefox it took longer to load the page so I added and raised wait
+ *  b. conditional wait is best, but it makes code more complicated and prone to duplication of wait code or major change to classes
+ *---------------------------------------------------------------
  * 3. The test was implemented with external chromedriver.exe and firefoxdriver.exe.
  *  a. Please download and extract chromedriver at location: C:\ChromeDriver\chromedriver_win32\chromedriver.exe
  *      OR change path in variable
  *  b. Please download and extract firefoxdriver at location: C:\FirefoxDriver\geckodriver.exe
  *      OR change path in variable
  *  c. The executable can be moved inside project in multiple ways
+ *---------------------------------------------------------------
  * 4. Firefox has a bug that impacts the Google search button clickability: https://bugzilla.mozilla.org/show_bug.cgi?id=1374283
  *  a. So I found a workaround with sendKey(Keys.ENTER) that works for both browsers;
  *  b. but implemented the workaround to trigger only for Firefox;
  *  c. I believe there was another workaround by refreshing the page, but it is not good code
  *
  */
-public class searchHomeWorkTest {
+public class searchHomeWorkTests {
     private String searchEngine;
     private WebDriver driver;
     private BaseSearchPage searchHomePage;
     private BaseSearchResults searchResultsPage;
 
+    //This is used in a commented test case
     private  Map<String,Map<String, Map<String,String>>> resultsBySearchEngine = new HashMap<>();
 
     @BeforeTest
@@ -63,32 +61,11 @@ public class searchHomeWorkTest {
         String browser="Chrome";
 //        String browser="Firefox";
         System.out.println("0.1. Instantiate driver based on browser under test");
-
-        if (browser.equalsIgnoreCase("chrome")){
-            System.out.println("\tTesting browser: CHROME");
-            //setup of needed and common options for the browser
-            ChromeOptions options = new ChromeOptions();
-                //required to run non-local connection
-            options.addArguments("--remote-allow-origins=*");
-                //optional for better visuals
-            options.addArguments("--start-maximized");
-                //optional for sites that have tutorials or notifications
-            options.addArguments("--disable-infobars");
-            options.addArguments("--disable-notifications");
-            driver = new ChromeDriver(options);
-        } else {
-            System.out.println("\tTesting browser: FIREFOX");
-            FirefoxProfile profile = new FirefoxProfile();
-            FirefoxOptions options = new FirefoxOptions();
-            options.setProfile(profile);
-            options.setAcceptInsecureCerts(true);
-            driver = new FirefoxDriver(options);
-            driver.manage().window().maximize();
-        }
-        //Modified implicit wait because when moving to BING there was lag and failure
-        //I would implement a conditional wait until the element is clickable.
-        //See BaseSearchPage resolveCookies method for example
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(3));
+        driver = getInstance(browser);
+        //Modified implicit wait because when moving to BING there was lag and failure.
+        //Ideally I would implement a conditional wait until the element is clickable.
+        //See BaseSearchPage resolveCookies method for example.
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
     }
 
     /**
@@ -133,44 +110,44 @@ public class searchHomeWorkTest {
             Assert.assertTrue(searchResultContains(keyword, secondEngine.get(result)));
         }
         System.out.println("13. Check which are the common results between:");
-        System.out.println("------------------------------");
-        firstEngine.keySet().forEach(System.out::println);
-        System.out.println("------------------------------");
-        secondEngine.keySet().forEach(System.out::println);
-        System.out.println("------------------------------");
+        System.out.println("\tGoogle");
+        printResults(firstEngine.keySet());
+        System.out.println("\tBing");
+        printResults(secondEngine.keySet());
+        System.out.println("\tComparison");
         Set<String> comparison = firstEngine.keySet();
         comparison.retainAll(secondEngine.keySet());
-        System.out.println("\tThe common results are:");
-        comparison.forEach(System.out::println);
+        System.out.println("\t\tThe common results are:");
+        printResults(comparison);
     }
 
     /**
      * In case we want to split above test into more, we need to store the 2 results for each engine
      * and control the order of execution. Options:
-     * 1. Store results in variables above then control the order of execution with annotations
+     * 1. Store results in variables above then control the order of execution with annotations:
+     *  \@Test(priority = 1)
      * 2. Store the results a file and move test in a separate class then execute in order
-     * 3. The <code>validateKeywordPresence</code> test can also be considered a precondition for this.
+     * 3. (Example commented below)The previous test can also be considered a precondition for following tests:
+     *  \@Test(dependsOnMethods = {"validateKeywordPresence"})
      * 4. The bellow implementation is to make it easy to expand the number of search engines
      */
-    @Test(priority = 1)
-    public void compareTopResults(){
-        //Changed the structure because I needed to look back and forward during iteration
-        List<String> engines=resultsBySearchEngine.keySet().stream().toList();
-        List<Map<String, Map<String, String>>> results = resultsBySearchEngine.values().stream().toList();
-        //Initialized with the first engine because the retainAll needs to be inside the loop
-        Set<String> fullCompare = results.get(0).keySet();
-        for (int i=1;i<engines.size();i++) {
-            fullCompare.retainAll(results.get(i).keySet());
-            System.out.println("\tThe common results "+engines.get(i-1)+" Vs "+engines.get(i));
-            Set<String> currentVsPrevious = results.get(i-1).keySet();
-            currentVsPrevious.retainAll(results.get(i).keySet());
-            currentVsPrevious.forEach(System.out::println);
-            System.out.println("------------------------------------------------");
-        }
-        System.out.println("\tThe common results across all engines are:");
-        fullCompare.forEach(System.out::println);
-        System.out.println("-----------------------------------------------");
-    }
+//    @Test(dependsOnMethods = {"validateKeywordPresence"})
+//    public void compareTopResults(){
+//        //Changed the structure because I needed to look back and forward during iteration
+//        List<String> engines=resultsBySearchEngine.keySet().stream().toList();
+//        List<Map<String, Map<String, String>>> results = resultsBySearchEngine.values().stream().toList();
+//        //Initialized with the first engine because the retainAll needs to be inside the loop
+//        Set<String> fullCompare = results.get(0).keySet();
+//        for (int i=1;i<engines.size();i++) {
+//            fullCompare.retainAll(results.get(i).keySet());
+//            System.out.println("\tThe common results "+engines.get(i-1)+" Vs "+engines.get(i));
+//            Set<String> currentVsPrevious = results.get(i-1).keySet();
+//            currentVsPrevious.retainAll(results.get(i).keySet());
+//            printResults(currentVsPrevious);
+//        }
+//        System.out.println("\tThe common results across all engines are:");
+//        printResults(fullCompare);
+//    }
 
     @AfterTest
     public void cleanup(){
@@ -180,6 +157,11 @@ public class searchHomeWorkTest {
         }
     }
 
+    /**
+     * Instantiating the engine related objects
+     *
+     * @param searchEngineName the name of the engine to be tested
+     */
     private void setSearchEngine(String searchEngineName){
         if (searchEngineName.toLowerCase().contains("google")){
             System.out.println("\tTesting search engine: GOOGLE");
@@ -213,5 +195,14 @@ public class searchHomeWorkTest {
             }
         }
         return present;
+    }
+
+    /**
+     * To minimize code duplication and for standardization of output
+     * @param results The set of keys top be printed. In our case the unique results from each engine or comparison
+     */
+    private void printResults(Set<String> results){
+        results.forEach(System.out::println);
+        System.out.println("------------------------------");
     }
 }
