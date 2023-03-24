@@ -92,7 +92,6 @@ public class searchHomeWorkTests {
 //        String keyword="chloroplast";
 //        String keyword="cat";
 //        String keyword="boomerang";
-
         Map<String, Map<String, String>> firstEngine;
         Map<String, Map<String, String>> secondEngine;
         System.out.println("1. Instantiating first search engine under test");
@@ -108,7 +107,10 @@ public class searchHomeWorkTests {
         resultsBySearchEngine.put(searchEngine,firstEngine);
         System.out.println("6. Validate all results contain keyword");
         for (String result: firstEngine.keySet()) {
-            Assert.assertTrue(searchResultContains(keyword, firstEngine.get(result)));
+//            I prefer using testng or a different test runner to the basic asserts
+//            assert searchResultContains(keyword, firstEngine.get(result)) :"This result doesn't contain the keyword: "+result;
+            Assert.assertTrue(searchResultContains(keyword, firstEngine.get(result)),
+                    "This result doesn't contain the keyword: "+result);
         }
         System.out.println("7. Instantiating second search engine under test");
         setSearchEngine("bing");
@@ -123,7 +125,8 @@ public class searchHomeWorkTests {
         resultsBySearchEngine.put(searchEngine,secondEngine);
         System.out.println("12. Validate all results contain keyword");
         for (String result: secondEngine.keySet()) {
-            Assert.assertTrue(searchResultContains(keyword, secondEngine.get(result)));
+            Assert.assertTrue(searchResultContains(keyword, secondEngine.get(result)),
+                    "This result doesn't contain the keyword: "+result);
         }
         System.out.println("13. Check which are the common results between:");
         System.out.println("\tGoogle");
