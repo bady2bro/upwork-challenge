@@ -17,12 +17,12 @@ import java.util.*;
 /**
  * This class contains the test given as homework.
  * NOTE:
- * 1. Tested for keywords:
+ * 1. Tested for keywords but results will vary depending on the localization:
  *  a. "boomerang" - passed
  *  b. "cat" - failed because one of the BING results is "Muzeum Sztuki i Techniki Japońskiej Manggha"
  *      that is missing "cat" from elements
  *  c. "chloroplast" - passed
- *  d. They still fail sometimes, so please execute at least twice until you see the above behavior
+ *  d. They still fail sometimes, so please execute at least twice until you see expected behavior
  *  e. The number of common links varies from execution to execution
  *      - For Firefox "chloroplast" has one common element
  *      - For Chrome "chloroplast" has two common elements
@@ -32,17 +32,22 @@ import java.util.*;
  *  a. when switching from google to bing and from chrome to firefox it took longer to load the page so I added and raised wait
  *  b. conditional wait is best, but it makes code more complicated and prone to duplication of wait code or major change to classes
  *---------------------------------------------------------------
- * 3. The test was implemented with external chromedriver.exe and firefoxdriver.exe.
- *  a. Please download and extract chromedriver at location: C:\ChromeDriver\chromedriver_win32\chromedriver.exe
- *      OR change path in variable
- *  b. Please download and extract firefoxdriver at location: C:\FirefoxDriver\geckodriver.exe
- *      OR change path in variable
- *  c. The executable can be moved inside project in multiple ways
+ * 3. The test was implemented with driver executables in "resources" package
+ * BUT it can be executed with external chromedriver.exe and firefoxdriver.exe:
+ *  a. Supported by my Chrome(111.0.5563.111) and Firefox(111.0.1) versions.
+ *  b. Please download and extract proper chromedriver for you at desired location:
+ *      ex. C:\ChromeDriver\chromedriver_win32\chromedriver.exe
+ *      AND
+ *      change path in property webdriver.chrome.driver in DriverFactory class
+ *  c. Please download and extract proper firefoxdriver for you at location:
+ *      C:\FirefoxDriver\geckodriver.exe
+ *      AND
+ *      change path in property webdriver.gecko.driver in DriverFactory class
  *---------------------------------------------------------------
  * 4. Firefox has a bug that impacts the Google search button clickability: https://bugzilla.mozilla.org/show_bug.cgi?id=1374283
  *  a. So I found a workaround with sendKey(Keys.ENTER) that works for both browsers;
  *  b. but implemented the workaround to trigger only for Firefox;
- *  c. I believe there was another workaround by refreshing the page, but it is not good code
+ *  c. I believe there was another workaround by refreshing the page, but it is bad code
  *
  */
 public class searchHomeWorkTests {
@@ -54,12 +59,16 @@ public class searchHomeWorkTests {
     //This is used in a commented test case
     private  Map<String,Map<String, Map<String,String>>> resultsBySearchEngine = new HashMap<>();
 
+    /**
+     * To switch between browsers activate the corresponding line of code
+     *
+     * for multiple scenarios we could pass parameters to this method @Parameters({browser}) and change the signature
+     * BUT it would mean adding a testng.xml file and would complicate the structure more
+     */
     @BeforeTest
     public void initialize(){
-        System.setProperty("webdriver.chrome.driver","C:\\ChromeDriver\\chromedriver_win32\\chromedriver.exe");
-        System.setProperty("webdriver.gecko.driver","C:\\FirefoxDriver\\geckodriver.exe");
-        String browser="Chrome";
-//        String browser="Firefox";
+//        String browser="Chrome";
+        String browser="Firefox";
         System.out.println("0.1. Instantiate driver based on browser under test");
         driver = getInstance(browser);
         //Modified implicit wait because when moving to BING there was lag and failure.
@@ -70,10 +79,17 @@ public class searchHomeWorkTests {
 
     /**
      * Included all steps of the homework in this test, but it can be split in different ways
+     *
+     * If you want to ADD new keyword, add the value to the DataProvider method (keywords)
+     *
+     * If you want to run ONLY for a specific keyword you have to:
+     *  1. Remove the "(dataProvider= Keywords)" from @Test annotation
+     *  2. Remove the parameter "String keyword"
+     *  3. Activate/Add "keyword" variable with wanted value
      */
-    @Test
-    public void validateKeywordPresence(){
-        String keyword="chloroplast";
+    @Test(dataProvider = "Keywords")
+    public void validateKeywordPresence(String keyword){
+//        String keyword="chloroplast";
 //        String keyword="cat";
 //        String keyword="boomerang";
 
@@ -119,6 +135,9 @@ public class searchHomeWorkTests {
         comparison.retainAll(secondEngine.keySet());
         System.out.println("\t\tThe common results are:");
         printResults(comparison);
+        //the homework didn't mention any assertion for this, but it feels like we should do this check
+        System.out.println("\t\tAssert if there are common items");
+        Assert.assertFalse(comparison.isEmpty(),"There are no common results between search engines!");
     }
 
     /**
@@ -204,5 +223,14 @@ public class searchHomeWorkTests {
     private void printResults(Set<String> results){
         results.forEach(System.out::println);
         System.out.println("------------------------------");
+    }
+
+    @DataProvider(name = "Keywords")
+    public Object[][] keywords(){
+        return new Object[][]{
+                {"chloroplast"},
+                {"cat"},
+                {"boomerang"}
+        };
     }
 }

@@ -137,6 +137,9 @@ public abstract class BaseSearchPage implements BaseSearch {
     public void resolveCookies(WebDriver driver){
 //        FluentWait<WebDriver> wait = new FluentWait<>(driver);
 //        wait.until(ExpectedConditions.elementToBeClickable(By.id(cookieConsent))).click();
-        driver.findElement(By.id(cookieConsent)).click();
+        //If we execute multiple scenarios only the first execution has cookies prompt
+        if (driver.findElements(By.id(cookieConsent)).size()==1){
+            driver.findElement(By.id(cookieConsent)).click();
+        }
     }
 }

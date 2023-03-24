@@ -29,6 +29,9 @@ public class GoogleSearchResults extends GoogleSearchHome implements BaseSearchR
     private final String resultUrlLocator=".//div/a";
     private final String resultTitleLocator=".//a/h3";
     private final String resultDescriptionLocator=".//div[@data-sokoban-feature='nke7rc']/div";
+    //Included nested results even though you mentioned not to because:
+    // 1. they usually point to different documentation (ex. different Wikipedia articles on different subjects)
+    // 2. I liked the challenge of finding the locator and handling the exception
     private final String nestedResultUrlLocator=".//ul/li/div/div/div/div[1]/div/div/div[1]/div/cite";
 
 

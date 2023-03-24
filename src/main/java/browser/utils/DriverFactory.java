@@ -9,7 +9,9 @@ import org.openqa.selenium.firefox.FirefoxProfile;
 
 public class DriverFactory {
     public static WebDriver getInstance(String browser){
+        WebDriver driver;
         if (browser.equalsIgnoreCase("chrome")){
+            System.setProperty("webdriver.chrome.driver",ClassLoader.getSystemResource("chromedriver.exe").getPath());
             System.out.println("\tTesting browser: CHROME");
             //setup of needed and common options for the browser
             ChromeOptions options = new ChromeOptions();
@@ -20,14 +22,18 @@ public class DriverFactory {
             //optional for sites that have tutorials or notifications
 //            options.addArguments("--disable-infobars");
 //            options.addArguments("--disable-notifications");
-            return new ChromeDriver(options);
+            driver= new ChromeDriver(options);
         } else {
+            System.setProperty("webdriver.gecko.driver",ClassLoader.getSystemResource("geckodriver.exe").getPath());
             System.out.println("\tTesting browser: FIREFOX");
             FirefoxProfile profile = new FirefoxProfile();
             FirefoxOptions options = new FirefoxOptions();
             options.setProfile(profile);
             options.setAcceptInsecureCerts(true);
-            return new FirefoxDriver(options);
+            driver= new FirefoxDriver(options);
+            driver.manage().window().maximize();
+
         }
+        return driver;
     }
 }
