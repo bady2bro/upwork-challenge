@@ -24,15 +24,16 @@ public class GoogleSearchResults extends GoogleSearchHome implements BaseSearchR
     private final String searchFieldLocator="//div/input[@name='q']";
     private final String partialHomePage = " - Google Search";
     private final String nextPageButtonLocator = "pnnext";
-    private final String resultsLocator="//*[@id=\"rso\"]//div/div/div[@data-sokoban-container]";
+    private final String resultsLocator="//*[@id=\"rso\"]//div[@jscontroller='SC7lYd']";
     private final String resultHeaderLocator =".//a/div/div/span";
-    private final String resultUrlLocator=".//div/a";
+    private final String resultUrlLocator=".//div[@class=\"yuRUbf\"]/a";
     private final String resultTitleLocator=".//a/h3";
-    private final String resultDescriptionLocator=".//div[@data-sokoban-feature='nke7rc']/div";
+    private final String resultDescriptionLocator=".//div[@data-snf='nke7rc']/div";
     //Included nested results even though you mentioned not to because:
     // 1. they usually point to different documentation (ex. different Wikipedia articles on different subjects)
     // 2. I liked the challenge of finding the locator and handling the exception
-    private final String nestedResultUrlLocator=".//ul/li/div/div/div/div[1]/div/div/div[1]/div/cite";
+    // 3. Between the first version and second of this code the DOM changed and xpaths now match
+    private final String nestedResultUrlLocator=".//div[@class=\"yuRUbf\"]/a";
 
 
 
